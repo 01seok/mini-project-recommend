@@ -110,6 +110,12 @@ AI Agent가 브라우저에서 무신사 상품을 크롤링하는 과정:
 3. 브랜드, 상품명, 가격, 이미지 URL 파싱
 4. 84개 실제 상품 데이터 수집 성공
 
+### 2. UI 검증 (AI Agent)
+
+AI Agent가 직접 추천 시스템을 실행하여 실제 무신사 이미지와 추천 로직이 정상 작동함을 검증했습니다.
+
+![UI Verification](assets/real_images_verification.png)
+
 ---
 
 ## 🔧 개선점
