@@ -1,0 +1,10 @@
+{
+  "NDCG@5": 0.5866,
+  "NDCG@10": 0.6825,
+  "NDCG@20": 0.8107,
+  "Precision@5": 1.0,
+  "Precision@10": 1.0,
+  "Recall@10": 0.0439,
+  "MRR": 1.0,
+  "num_users": 50
+}
