@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-Style Clothing Recommender</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>👔 X-Style Clothing Recommender</h1>
+            <p class="subtitle">Multi-Action Prediction 기반 추천 시스템</p>
+        </header>
+
+        <section class="controls">
+            <div class="user-select">
+                <label for="user-id">사용자 선택</label>
+                <select id="user-id">
+                    <option value="user_001">캐주얼 러버 (캐주얼/스트릿 선호)</option>
+                    <option value="user_002">클래식 맨 (클래식/포멀 선호)</option>
+                    <option value="user_003">스트릿 보이 (스트릿/스포티 선호)</option>
+                    <option value="user_004">새로운 유저 (선호 없음)</option>
+                </select>
+            </div>
+            <button id="refresh-btn" class="btn-primary">🔄 추천 새로고침</button>
+            <button id="clear-history-btn" class="btn-secondary">🗑️ 히스토리 초기화</button>
+        </section>
+
+        <section class="stats">
+            <div class="stat-card">
+                <span class="stat-label">현재 사용자</span>
+                <span class="stat-value" id="current-user">-</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">행동 기록</span>
+                <span class="stat-value" id="history-count">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">추천 상품</span>
+                <span class="stat-value" id="rec-count">0</span>
+            </div>
+        </section>
+
+        <section class="recommendations">
+            <h2>📦 추천 상품</h2>
+            <div class="item-grid" id="item-grid">
+                <!-- 상품 카드가 동적으로 생성됨 -->
+            </div>
+        </section>
+
+        <section class="history-section">
+            <h2>📜 사용자 행동 히스토리</h2>
+            <div class="history-list" id="history-list">
+                <!-- 히스토리가 동적으로 생성됨 -->
+            </div>
+        </section>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
