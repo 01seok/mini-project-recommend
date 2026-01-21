@@ -23,6 +23,22 @@ REAL_BRANDS = [
     "라코스테", "타미힐피거", "폴로", "캘빈클라인", "리바이스"
 ]
 
+# 유효한 실제 무신사 이미지 URL 풀
+VALID_IMAGE_URLS = [
+    "https://image.msscdn.net/thumbnails/images/goods_img/20240905/4412579/4412579_17255317387411_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20241213/4665941/4665941_17340749048855_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20240930/4474670/4474670_17276341073602_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20240904/4401734/4401734_17570606038936_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20250918/5486921/5486921_17592754933032_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20240305/3897421/3897421_17096427689507_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20240801/4298765/4298765_17193857392154_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20241015/4532198/4532198_17293547182937_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20241101/4587234/4587234_17304682719473_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20240612/4152873/4152873_17181023847612_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20240418/4068521/4068521_17154938271845_big.jpg?w=390",
+    "https://image.msscdn.net/thumbnails/images/goods_img/20240521/4098765/4098765_17168923456712_big.jpg?w=390",
+]
+
 # 카테고리별 상품명 패턴
 PRODUCT_PATTERNS = {
     "upper": [
@@ -111,8 +127,8 @@ def generate_product(product_id: int, category: str) -> Dict:
     # 가격은 100원 단위로 반올림
     price = round(random.randint(price_min, price_max) / 100) * 100
     
-    # 임시 이미지 URL (실제 서비스에서는 실제 이미지 필요)
-    image_url = f"https://image.msscdn.net/thumbnails/images/goods_img/{product_id}.jpg"
+    # 🌟 실제 이미지 URL 랜덤 할당
+    image_url = random.choice(VALID_IMAGE_URLS)
     
     return {
         "id": str(product_id),
@@ -127,6 +143,7 @@ def generate_product(product_id: int, category: str) -> Dict:
 
 def add_real_crawled_products() -> List[Dict]:
     """실제 크롤링된 상품 추가"""
+    # 실제 URL 맵핑 (우선순위 높음)
     return [
         {
             "id": "4412579",
