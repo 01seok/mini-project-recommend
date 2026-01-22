@@ -1,4 +1,4 @@
-# X-Style Clothing Recommendation Service
+# X 추천 알고리즘을 참고한 의류 추천 서비스
 
 X(Twitter) 추천 알고리즘의 핵심 원리를 Python/FastAPI로 구현한 옷 추천 서비스입니다.
 
@@ -22,7 +22,7 @@ Filtering → Scoring → Selection → Response
 
 ## 📊 NDCG란?
 
-**NDCG (Normalized Discounted Cumulative Gain)**는 추천 시스템의 순위 품질을 평가하는 표준 메트릭입니다.
+NDCG (Normalized Discounted Cumulative Gain)는 추천 시스템의 순위 품질을 평가하는 표준 메트릭입니다.
 
 ### 핵심 개념
 
