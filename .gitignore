@@ -61,3 +61,15 @@ htmlcov/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Docker
+docker-compose.override.yml
+
+# Secrets & Config (보안)
+secrets/
+*.key
+*.pem
+*.crt
+config/production.yml
+config/secrets.yml
+credentials.json

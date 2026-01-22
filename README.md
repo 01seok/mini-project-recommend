@@ -192,6 +192,7 @@ app/
 전체 추천 파이프라인의 데이터 흐름을 보여줍니다:
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ffffff', 'primaryTextColor':'#000000', 'primaryBorderColor':'#7C7C7C', 'lineColor':'#7C7C7C', 'secondaryColor':'#f0f0f0', 'tertiaryColor':'#ffffff', 'background':'#ffffff', 'mainBkg':'#ffffff', 'secondBkg':'#f0f0f0', 'edgeLabelBackground':'#ffffff'}}}%%
 graph TD
     A[사용자 요청] --> B[Query Hydration]
     B --> C{Candidate Sourcing}
@@ -215,11 +216,11 @@ graph TD
     G3 --> H[Selection Stage<br/>TopK Selector]
     H --> I[추천 결과 응답]
 
-    style A fill:#e1f5ff
-    style I fill:#e1f5ff
-    style G1 fill:#fff3cd
-    style G2 fill:#fff3cd
-    style G3 fill:#fff3cd
+    style A fill:#e1f5ff,stroke:#1976d2
+    style I fill:#e1f5ff,stroke:#1976d2
+    style G1 fill:#fff3cd,stroke:#f57c00
+    style G2 fill:#fff3cd,stroke:#f57c00
+    style G3 fill:#fff3cd,stroke:#f57c00
 ```
 
 ### 2. Multi-Action 점수 계산
@@ -227,6 +228,7 @@ graph TD
 7가지 행동 확률을 예측하고 가중치를 적용하여 최종 점수를 계산하는 과정:
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ffffff', 'primaryTextColor':'#000000', 'primaryBorderColor':'#7C7C7C', 'lineColor':'#7C7C7C', 'secondaryColor':'#f0f0f0', 'tertiaryColor':'#ffffff', 'background':'#ffffff', 'mainBkg':'#ffffff', 'secondBkg':'#f0f0f0', 'edgeLabelBackground':'#ffffff'}}}%%
 graph LR
     A[사용자 프로필] --> B[Affinity 계산]
     C[상품 정보] --> B
@@ -258,9 +260,9 @@ graph LR
     I --> J[Diversity Penalty<br/>0.8^count]
     J --> K[최종 추천 점수]
 
-    style G fill:#fff3cd
-    style I fill:#d4edda
-    style K fill:#d4edda
+    style G fill:#fff3cd,stroke:#f57c00
+    style I fill:#d4edda,stroke:#388e3c
+    style K fill:#d4edda,stroke:#388e3c
 ```
 
 ### 3. 시스템 레이어 아키텍처
@@ -268,6 +270,7 @@ graph LR
 FastAPI 기반 4-Tier 아키텍처:
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ffffff', 'primaryTextColor':'#000000', 'primaryBorderColor':'#7C7C7C', 'lineColor':'#7C7C7C', 'secondaryColor':'#f0f0f0', 'tertiaryColor':'#ffffff', 'background':'#ffffff', 'mainBkg':'#ffffff', 'secondBkg':'#f0f0f0', 'edgeLabelBackground':'#ffffff', 'clusterBkg':'#ffffff', 'clusterBorder':'#7C7C7C'}}}%%
 graph TB
     subgraph "🌐 Presentation Layer"
         A1[Web UI<br/>HTML/CSS/JS]
@@ -356,81 +359,33 @@ graph TB
 사용자가 추천을 요청했을 때 시스템 내부에서 일어나는 전체 흐름:
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ffffff', 'primaryTextColor':'#000000', 'primaryBorderColor':'#7C7C7C', 'lineColor':'#7C7C7C', 'secondaryColor':'#f0f0f0', 'tertiaryColor':'#ffffff', 'background':'#ffffff', 'mainBkg':'#ffffff', 'secondBkg':'#f0f0f0', 'edgeLabelBackground':'#ffffff', 'actorBkg':'#e3f2fd', 'actorBorder':'#1976d2', 'actorTextColor':'#000000', 'actorLineColor':'#7C7C7C', 'signalColor':'#7C7C7C', 'signalTextColor':'#000000', 'labelBoxBkgColor':'#f0f0f0', 'labelBoxBorderColor':'#7C7C7C', 'labelTextColor':'#000000', 'loopTextColor':'#000000', 'noteBorderColor':'#7C7C7C', 'noteBkgColor':'#fff3cd', 'noteTextColor':'#000000', 'activationBorderColor':'#7C7C7C', 'activationBkgColor':'#e1f5ff', 'sequenceNumberColor':'#000000'}}}%%
 sequenceDiagram
-    autonumber
     actor User as 👤 사용자
     participant API as FastAPI Router
     participant Service as RecommendationService
-    participant Source as CandidateSource
-    participant Filter as CompositeFilter
-    participant Scorer as CompositeScorer
-    participant Selector as TopKSelector
-    participant Store as DataStore
+    participant Pipeline as 추천 파이프라인
 
-    User->>API: GET /api/recommend?user_id=1
-    activate API
+    User->>+API: GET /api/recommend?user_id=1
+    API->>+Service: get_recommendations(user_id)
 
-    API->>Service: get_recommendations(user_id)
-    activate Service
+    Note over Service: Query Hydration<br/>사용자 프로필 & 참여 이력 조회
 
-    Service->>Store: 사용자 프로필 조회
-    Store-->>Service: User(preferred_brands, categories)
+    Service->>+Pipeline: 1️⃣ Candidate Sourcing
+    Pipeline-->>-Service: 후보 200개 (In/Out Network)
 
-    Service->>Store: 참여 이력 조회
-    Store-->>Service: List[Engagement]
+    Service->>+Pipeline: 2️⃣ Filtering
+    Pipeline-->>-Service: 필터링된 후보 150개
 
-    rect rgb(230, 245, 255)
-        Note over Service: 1️⃣ Query Hydration
-        Service->>Service: PipelineContext 생성<br/>(user, history, seen_items)
-    end
+    Service->>+Pipeline: 3️⃣ Scoring
+    Note right of Pipeline: Multi-Action 확률 예측<br/>가중치 합산<br/>다양성 페널티
+    Pipeline-->>-Service: 점수화된 후보
 
-    rect rgb(255, 250, 230)
-        Note over Service,Source: 2️⃣ Candidate Sourcing
-        Service->>Source: source(context)
-        Source->>Store: In-Network: 선호 브랜드 상품 조회
-        Store-->>Source: List[Item]
-        Source->>Store: Out-of-Network: 전체 카탈로그 조회
-        Store-->>Source: List[Item]
-        Source-->>Service: Combined 후보 200개
-    end
+    Service->>+Pipeline: 4️⃣ Selection
+    Pipeline-->>-Service: Top 20 추천 결과
 
-    rect rgb(230, 255, 240)
-        Note over Service,Filter: 3️⃣ Filtering
-        Service->>Filter: filter(candidates, context)
-        Filter->>Filter: Duplicate 제거
-        Filter->>Filter: Seen Items 제거
-        Filter->>Filter: Engaged Items 제거
-        Filter-->>Service: 필터링된 후보 150개
-    end
-
-    rect rgb(255, 245, 230)
-        Note over Service,Scorer: 4️⃣ Scoring
-        Service->>Scorer: score(candidates, context)
-
-        Scorer->>Scorer: MultiActionScorer<br/>7개 행동 확률 예측
-        Note right of Scorer: P(like), P(click),<br/>P(purchase), etc.
-
-        Scorer->>Scorer: WeightedScorer<br/>가중치 합산
-        Note right of Scorer: final_score =<br/>Σ(weight × probability)
-
-        Scorer->>Scorer: DiversityScorer<br/>브랜드 다양성 페널티
-        Note right of Scorer: penalty = 0.8^count
-
-        Scorer-->>Service: List[ScoredItem]
-    end
-
-    rect rgb(245, 235, 255)
-        Note over Service,Selector: 5️⃣ Selection
-        Service->>Selector: select(scored_items, k=20)
-        Selector->>Selector: final_score 기준 정렬
-        Selector-->>Service: Top 20 추천 결과
-    end
-
-    Service-->>API: RecommendationResponse
-    deactivate Service
-
-    API-->>User: JSON Response
-    deactivate API
+    Service-->>-API: RecommendationResponse
+    API-->>-User: JSON Response
 ```
 
 ---
@@ -465,11 +420,23 @@ sequenceDiagram
 
 ### 성능 특성
 
-```
-벤치마크 (1000개 상품, 50명 사용자):
-- 평균 응답 시간: ~50ms
-- 파이프라인 병목: MultiActionScorer (60%)
-- 메모리 사용: ~100MB
+실측 벤치마크 결과 (1000개 상품, 1000회 요청):
+
+| Metric | Value | 설명 |
+|--------|-------|------|
+| **P50 (중앙값)** | 5ms | 절반의 요청이 5ms 이내 완료 |
+| **P95** | 7ms | 95%의 요청이 7ms 이내 완료 |
+| **P99** | 8ms | 99%의 요청이 8ms 이내 완료 |
+| **평균** | 5ms | 산술 평균 응답 시간 |
+| **처리량** | 205 req/sec | 초당 처리 가능한 요청 수 |
+| **파이프라인 병목** | MultiActionScorer | Affinity 계산이 가장 오래 걸림 |
+| **메모리 사용** | ~100MB | JSON 데이터 로드 시 |
+
+*측정 환경: Python 3.9, macOS, 인메모리 저장소*
+
+성능 측정 방법:
+```bash
+python scripts/benchmark_latency.py
 ```
 
 ---
@@ -492,7 +459,62 @@ uvicorn app.main:app --reload --port 8080
 
 - `GET /api/recommend?user_id={id}` - 추천 목록 조회
 - `POST /api/engagement` - 사용자 행동 기록
+- `GET /health` - 헬스 체크
 - `GET /` - 테스트 웹 UI
+
+---
+
+## 🐳 Docker 배포
+
+### 이미지 빌드 및 실행
+
+```bash
+# Docker Compose로 실행 (권장)
+docker-compose up -d
+
+# 로그 확인
+docker-compose logs -f
+
+# 중지
+docker-compose down
+```
+
+### 수동 Docker 실행
+
+```bash
+# 이미지 빌드
+docker build -t musinsa-recommend:latest .
+
+# 컨테이너 실행
+docker run -d \
+  -p 8080:8080 \
+  --name recommend-service \
+  -v $(pwd)/app/data/musinsa_products.json:/app/app/data/musinsa_products.json:ro \
+  musinsa-recommend:latest
+
+# Health Check
+curl http://localhost:8080/health
+```
+
+### 배포 확인
+
+```bash
+# API 테스트
+curl "http://localhost:8080/api/recommend?user_id=1&count=5"
+
+# 웹 UI 접속
+open http://localhost:8080
+```
+
+### Docker 특징
+
+- **경량 이미지**: Python 3.9-slim 기반
+- **Health Check**: 30초 간격으로 자동 헬스 체크
+- **자동 재시작**: 컨테이너 장애 시 자동 재시작
+- **볼륨 마운트**: 상품 데이터 외부 관리 가능
+- **포트**: 8080 (변경 가능)
+
+---
 
 ## 📈 평가 실행
 

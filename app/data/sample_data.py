@@ -38,7 +38,7 @@ def init_sample_data():
         }
         
         loaded_count = 0
-        for p in musinsa_products[:100]:  # 샘플로 100개만 로드
+        for p in musinsa_products:  # 전체 로드
             try:
                 cat = category_map.get(p.get('category', 'upper'), Category.UPPER)
                 item = Item(
