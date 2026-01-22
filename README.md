@@ -263,44 +263,78 @@ graph LR
     style K fill:#d4edda
 ```
 
-### 3. 시스템 아키텍처
+### 3. 시스템 레이어 아키텍처
 
-FastAPI 기반 시스템의 레이어 구조:
+FastAPI 기반 4-Tier 아키텍처:
 
 ```mermaid
-graph TD
-    A[Client Browser] -->|HTTP Request| B[FastAPI Router Layer]
+graph TB
+    subgraph "🌐 Presentation Layer"
+        A1[Web UI<br/>HTML/CSS/JS]
+        A2[API Client<br/>HTTP/JSON]
+    end
 
-    B --> C1[recommend.py<br/>GET /api/recommend]
-    B --> C2[engagement.py<br/>POST /api/engagement]
+    subgraph "🔌 API Layer - FastAPI Routers"
+        B1["🔵 RecommendRouter<br/>GET /api/recommend<br/>사용자별 추천 조회"]
+        B2["🟢 EngagementRouter<br/>POST /api/engagement<br/>사용자 행동 기록"]
+    end
 
-    C1 --> D[Services Layer]
-    C2 --> D
+    subgraph "⚙️ Service Layer - Business Logic"
+        C1["📊 RecommendationService<br/>• 파이프라인 오케스트레이션<br/>• Context 생성 및 관리"]
+        C2["📝 EngagementService<br/>• 행동 데이터 저장<br/>• 이력 집계"]
+        C3["📈 EvaluationService<br/>• NDCG 계산<br/>• 성능 메트릭 측정"]
+    end
 
-    D --> E1[recommendation.py<br/>추천 파이프라인 오케스트레이션]
-    D --> E2[engagement.py<br/>사용자 행동 추적]
-    D --> E3[evaluation.py<br/>NDCG 메트릭 계산]
+    subgraph "🔄 Pipeline Layer - Recommendation Components"
+        direction TB
+        D1["1️⃣ Sources<br/>• InNetworkSource<br/>• OutOfNetworkSource<br/>• CombinedSource"]
+        D2["2️⃣ Filters<br/>• DuplicateFilter<br/>• SeenItemsFilter<br/>• EngagedItemsFilter"]
+        D3["3️⃣ Scorers<br/>• MultiActionScorer<br/>• WeightedScorer<br/>• DiversityScorer"]
+        D4["4️⃣ Selector<br/>• TopKSelector"]
 
-    E1 --> F[Pipeline Layer]
+        D1 --> D2
+        D2 --> D3
+        D3 --> D4
+    end
 
-    F --> G1[sources.py<br/>In/Out Network]
-    F --> G2[filters.py<br/>Duplicate/Seen/Engaged]
-    F --> G3[scorers.py<br/>MultiAction/Weighted/Diversity]
-    F --> G4[selectors.py<br/>TopK Selection]
+    subgraph "💾 Data Layer - Storage"
+        E1[("👤 UserStore<br/>사용자 프로필<br/>선호 브랜드/카테고리")]
+        E2[("📦 ItemStore<br/>상품 데이터<br/>1000개 무신사 상품")]
+        E3[("📋 EngagementStore<br/>행동 히스토리<br/>like/purchase/click")]
+    end
 
-    E1 --> H[Data Layer]
-    E2 --> H
+    subgraph "📂 Data Source"
+        F1[("📄 musinsa_products.json")]
+    end
 
-    H --> I1[ItemStore<br/>상품 데이터]
-    H --> I2[UserStore<br/>사용자 프로필]
-    H --> I3[EngagementStore<br/>행동 히스토리]
+    A1 --> B1
+    A2 --> B1
+    A2 --> B2
 
-    I1 -.->|읽기| J[(musinsa_products.json<br/>1000개 상품)]
+    B1 --> C1
+    B2 --> C2
 
-    style B fill:#e1f5ff
-    style D fill:#fff3cd
-    style F fill:#d4edda
-    style H fill:#f8d7da
+    C1 --> D1
+    C1 --> E1
+    C1 --> E2
+    C1 --> E3
+
+    C2 --> E3
+    C3 --> E2
+    C3 --> E3
+
+    E2 -.->|초기 로드| F1
+
+    style B1 fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    style B2 fill:#e8f5e9,stroke:#388e3c,stroke-width:3px
+    style C1 fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style D1 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style D2 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style D3 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style D4 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style E1 fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style E2 fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style E3 fill:#fce4ec,stroke:#c2185b,stroke-width:2px
 ```
 
 ### 4. 주요 컴포넌트 설명
@@ -317,178 +351,126 @@ graph TD
 
 ---
 
-## 📊 코드 품질 평가
+## 🔄 추천 요청 시퀀스 다이어그램
 
-### 종합 점수: **8.4/10** (Very Good)
+사용자가 추천을 요청했을 때 시스템 내부에서 일어나는 전체 흐름:
 
-이 프로젝트는 1,035 라인의 핵심 코드로 프로덕션 수준의 추천 시스템을 구현했습니다.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 👤 사용자
+    participant API as FastAPI Router
+    participant Service as RecommendationService
+    participant Source as CandidateSource
+    participant Filter as CompositeFilter
+    participant Scorer as CompositeScorer
+    participant Selector as TopKSelector
+    participant Store as DataStore
 
-### 상세 평가
+    User->>API: GET /api/recommend?user_id=1
+    activate API
 
-| 항목 | 점수 | 평가 |
-|------|------|------|
-| **코드 구조** | 9/10 | 명확한 레이어 분리 (Router/Service/Pipeline/Data) |
-| **아키텍처** | 9/10 | Strategy, Composite, Pipeline 패턴 적절히 활용 |
-| **유지보수성** | 8/10 | 타입 힌트와 Pydantic으로 안전성 확보 |
-| **확장성** | 9/10 | 추상 클래스로 새로운 컴포넌트 추가 용이 |
-| **성능** | 7/10 | 인메모리 저장소로 빠르지만 확장성 제한 |
-| **테스트** | 8/10 | NDCG 평가 프레임워크 완비 |
-| **문서화** | 9/10 | 모든 모듈에 상세한 docstring |
-| **총점** | **8.4/10** | **매우 우수** |
+    API->>Service: get_recommendations(user_id)
+    activate Service
 
-### 강점
+    Service->>Store: 사용자 프로필 조회
+    Store-->>Service: User(preferred_brands, categories)
 
-#### 1. 뛰어난 아키텍처 설계
+    Service->>Store: 참여 이력 조회
+    Store-->>Service: List[Engagement]
+
+    rect rgb(230, 245, 255)
+        Note over Service: 1️⃣ Query Hydration
+        Service->>Service: PipelineContext 생성<br/>(user, history, seen_items)
+    end
+
+    rect rgb(255, 250, 230)
+        Note over Service,Source: 2️⃣ Candidate Sourcing
+        Service->>Source: source(context)
+        Source->>Store: In-Network: 선호 브랜드 상품 조회
+        Store-->>Source: List[Item]
+        Source->>Store: Out-of-Network: 전체 카탈로그 조회
+        Store-->>Source: List[Item]
+        Source-->>Service: Combined 후보 200개
+    end
+
+    rect rgb(230, 255, 240)
+        Note over Service,Filter: 3️⃣ Filtering
+        Service->>Filter: filter(candidates, context)
+        Filter->>Filter: Duplicate 제거
+        Filter->>Filter: Seen Items 제거
+        Filter->>Filter: Engaged Items 제거
+        Filter-->>Service: 필터링된 후보 150개
+    end
+
+    rect rgb(255, 245, 230)
+        Note over Service,Scorer: 4️⃣ Scoring
+        Service->>Scorer: score(candidates, context)
+
+        Scorer->>Scorer: MultiActionScorer<br/>7개 행동 확률 예측
+        Note right of Scorer: P(like), P(click),<br/>P(purchase), etc.
+
+        Scorer->>Scorer: WeightedScorer<br/>가중치 합산
+        Note right of Scorer: final_score =<br/>Σ(weight × probability)
+
+        Scorer->>Scorer: DiversityScorer<br/>브랜드 다양성 페널티
+        Note right of Scorer: penalty = 0.8^count
+
+        Scorer-->>Service: List[ScoredItem]
+    end
+
+    rect rgb(245, 235, 255)
+        Note over Service,Selector: 5️⃣ Selection
+        Service->>Selector: select(scored_items, k=20)
+        Selector->>Selector: final_score 기준 정렬
+        Selector-->>Service: Top 20 추천 결과
+    end
+
+    Service-->>API: RecommendationResponse
+    deactivate Service
+
+    API-->>User: JSON Response
+    deactivate API
+```
+
+---
+
+## 📊 기술 스택 및 아키텍처 특징
+
+### 구현 특징
+
+#### ✅ 강점
 - **Strategy Pattern**: Source, Filter, Scorer, Selector 모두 추상 인터페이스 구현
 - **Composite Pattern**: CompositeFilter, CompositeScorer로 컴포넌트 조합 가능
 - **Pipeline Pattern**: 명확한 입출력 계약으로 단계별 처리
 - **Dependency Injection**: PipelineContext로 의존성 전달
+- **타입 안전성**: Pydantic BaseModel + 타입 힌트 완비
+- **평가 인프라**: NDCG, Precision, MRR 메트릭 구현
 
-```python
-# 확장 가능한 설계 예시
-self.scorer = CompositeScorer([
-    MultiActionScorer(),      # 새로운 스코어러 추가 용이
-    WeightedScorer(),
-    DiversityScorer(),
-])
-```
+#### ⚠️ 개선 고려사항
+- **확장성**: 인메모리 저장소로 대용량 데이터 처리 제한
+- **실시간 학습**: 현재는 휴리스틱 기반, ML 모델 적용 가능
+- **캐싱**: Redis 등 캐싱 레이어 미적용
+- **에러 처리**: 엣지 케이스 핸들링 보강 필요
 
-#### 2. 타입 안전성
-- Pydantic BaseModel로 런타임 검증
-- 모든 함수에 타입 힌트 적용
-- Enum으로 ActionType, Category 정의
+### 코드 복잡도
 
-#### 3. 테스트 가능성
-- 추상 클래스로 모킹 용이
-- 순수 함수 중심 설계 (affinity 계산)
-- NDCG/Precision/MRR 평가 인프라 완비
-
-#### 4. 문서화 품질
-- 각 모듈마다 X 알고리즘 대응 컴포넌트 명시
-- 복잡한 로직에 상세 주석
-- README에 평가 방법론 설명
-
-#### 5. 실용적인 구현
-- 실제 무신사 데이터 1000개 활용
-- 웹 UI로 즉시 테스트 가능
-- NDCG@20 = 0.81 (우수한 성능)
-
-### 개선 가능 영역
-
-#### 1. 점수 계산 복잡도 (중요도: 중)
-**현재 문제:**
-- `MultiActionScorer`가 130줄로 너무 많은 책임 보유
-- Affinity 계산, 확률 예측, 부스트 계산 모두 포함
-
-**개선 방안:**
-```python
-# 분리 제안
-class AffinityCalculator:
-    def calculate_brand_affinity(self, context) -> float
-    def calculate_style_affinity(self, context) -> float
-
-class ActionProbabilityPredictor:
-    def __init__(self, affinity_calculator: AffinityCalculator)
-    def predict(self, item, context) -> ActionScores
-```
-
-#### 2. 하드코딩된 확률 공식 (중요도: 중)
-**현재 문제:**
-- [scorers.py:60-68](app/pipeline/scorers.py#L60-L68)에 공식 하드코딩
-- A/B 테스트나 조정이 어려움
-
-**개선 방안:**
-```python
-# config.py에 공식 설정 추가
-ACTION_FORMULAS = {
-    "like": lambda base, boost: min(1.0, base + boost * 0.8),
-    "purchase": lambda base, boost: min(1.0, base * 0.3 + boost * 0.3),
-}
-```
-
-#### 3. 에러 처리 부족 (중요도: 낮)
-**현재 문제:**
-- 빈 후보 리스트 검증 없음
-- 사용자가 없을 때 기본값 처리 미흡
-
-**개선 방안:**
-```python
-if not candidates:
-    logger.warning(f"No candidates for user {user_id}")
-    return self._get_fallback_recommendations()
-```
-
-#### 4. 확장성 제한 (중요도: 중)
-**현재 문제:**
-- 인메모리 저장소로 대용량 데이터 처리 불가
-- 캐싱 레이어 없음
-
-**개선 방안:**
-- Redis로 사용자 프로필 캐싱
-- PostgreSQL/MongoDB로 영구 저장
-- Celery로 비동기 배치 처리
-
-#### 5. Hydrator 미구현 (중요도: 낮)
-**현재 문제:**
-- base.py에 Hydrator 추상 클래스만 정의
-- 메타데이터 보강 로직 없음
-
-**개선 방안:**
-```python
-class ImageEmbeddingHydrator(Hydrator):
-    """CLIP 모델로 이미지 임베딩 추가"""
-    def hydrate(self, items, context):
-        for item in items:
-            item.metadata["image_embedding"] = self.clip_model.encode(item.image_url)
-```
-
-### 코드 복잡도 분석
-
-| 파일 | 라인 수 | 클래스 수 | 복잡도 | 평가 |
-|------|---------|----------|--------|------|
-| scorers.py | 207 | 4 | 중 | MultiActionScorer 리팩토링 권장 |
-| sources.py | 92 | 3 | 낮 | 양호 |
-| filters.py | 82 | 5 | 낮 | 양호 |
-| recommendation.py | 172 | 1 | 중 | 오케스트레이션 로직 명확 |
-| selectors.py | 26 | 1 | 낮 | 매우 단순 |
+| 파일 | 라인 수 | 클래스 수 | 특징 |
+|------|---------|----------|------|
+| scorers.py | 207 | 4 | 다중 행동 확률 예측 및 가중치 계산 |
+| sources.py | 92 | 3 | In/Out Network 후보 소싱 |
+| filters.py | 82 | 5 | 중복/본 상품/참여 이력 필터링 |
+| recommendation.py | 172 | 1 | 파이프라인 오케스트레이션 |
+| selectors.py | 26 | 1 | Top-K 선택 |
 
 ### 성능 특성
 
 ```
 벤치마크 (1000개 상품, 50명 사용자):
-- 평균 응답 시간: ~50ms (인메모리 저장소)
-- 파이프라인 병목: MultiActionScorer (전체의 60%)
-- 메모리 사용: ~100MB (JSON 데이터 로드)
+- 평균 응답 시간: ~50ms
+- 파이프라인 병목: MultiActionScorer (60%)
+- 메모리 사용: ~100MB
 ```
-
-### 보안 고려사항
-
-- 입력 검증: Pydantic으로 API 파라미터 검증 ✅
-- SQL Injection: 인메모리 저장소로 해당 없음 ✅
-- Rate Limiting: 미구현 ⚠️
-- 인증/인가: 미구현 (테스트 프로젝트) ⚠️
-
-### 다음 단계 개선 로드맵
-
-1. **즉시 적용 가능** (1-2일):
-   - MultiActionScorer 리팩토링
-   - 에러 핸들링 추가
-   - 로깅 개선
-
-2. **단기** (1주):
-   - Redis 캐싱 도입
-   - 확률 공식 설정화
-   - 단위 테스트 작성
-
-3. **중기** (1개월):
-   - 실제 ML 모델 (XGBoost) 적용
-   - 이미지/텍스트 임베딩 추가
-   - PostgreSQL 영구 저장
-
-4. **장기** (3개월):
-   - A/B 테스트 프레임워크
-   - 실시간 개인화
-   - 분산 추천 시스템
 
 ---
 
