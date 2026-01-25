@@ -73,3 +73,8 @@ secrets/
 config/production.yml
 config/secrets.yml
 credentials.json
+
+# Documentation (개인 학습용)
+HOW_IT_WORKS.md
+CODE_EXPLANATION.md
+INTERNAL_NOTES.md
